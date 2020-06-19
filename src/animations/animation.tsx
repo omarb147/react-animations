@@ -4,37 +4,46 @@ interface IUseAnimationProps {
   target: string;
   animation: Keyframe[] | PropertyIndexedKeyframes;
   time: number;
-  trigger: string | undefined;
+  trigger: string | { target: string; action: string } | undefined;
+  callback: () => void;
 }
 
 export const useAnimation = (data: IUseAnimationProps) => {
-  //   const [animationEnded, setAnimationEndedState] = useState(true);
-  const { target, animation, time, trigger } = data;
-
-  //   const callBack = () => {
-  //     // setAnimationEndedState(true);
-  //     console.log("here");
-  //   };
+  const [animationEnded, setAnimationEndedState] = useState(true);
+  const { target, animation, time, trigger, callback } = data;
 
   useEffect(() => {
     const element = document.querySelector(target);
-    // const sharedTimeline = document.timeline;
+    setAnimationEndedState(true);
 
     const keyFrames = new KeyframeEffect(element, animation, time);
     const animationObj = new Animation(keyFrames);
-    animationObj.onfinish = () => console.log("done");
+    animationObj.onfinish = () => {
+      callback();
+      setAnimationEndedState(true);
+    };
 
-    console.log("before", animationObj.finished);
     if (element) {
-      if (trigger) {
+      if (typeof trigger === "string") {
         const workingElement = element as HTMLElement;
         //@ts-ignore
         workingElement[trigger] = () => {
           animationObj.cancel();
+          setAnimationEndedState(false);
           animationObj.play();
         };
+      } else if (typeof trigger === "object") {
+        const triggerObject = document.querySelector(trigger.target) as HTMLElement;
+        if (triggerObject) {
+          //@ts-ignore
+          triggerObject[trigger.action] = () => {
+            animationObj.cancel();
+            setAnimationEndedState(false);
+            animationObj.play();
+          };
+        }
       }
     }
   }, []);
-  //   console.log(animationEnded);
+  return [animationEnded];
 };
