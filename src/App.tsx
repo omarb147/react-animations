@@ -7,38 +7,40 @@ const callback = () => {
 };
 
 const App = () => {
-  // const [completed] = useAnimation({
-  //   target: ".test",
-  //   animation: { color: ["black", "red"], easing: ["ease-in"] },
-  //   alternate: true,
-  //   time: 500,
-  //   trigger: { target: ".other", action: "onclick" },
-  //   callback: callback,
-  // });
+  const [completed] = useAnimation({
+    target: ".test",
+    animation: { color: ["black", "red"], easing: ["ease-in"] },
+    alternate: true,
+    time: 500,
+    trigger: { target: ".other", action: "click" },
+    callback: callback,
+  });
 
   useAnimation({
     target: "#sidebar",
-    animation: { width: ["30rem", "5rem"], easing: ["ease"] },
+    animation: { flex: ["0.6", "0.08"] },
     alternate: true,
+    easing: "easeInBack",
     time: 1000,
-    trigger: { target: ".other", action: "onclick" },
+    trigger: { target: ".other", action: "click" },
   });
 
-  // useAnimation({
-  //   target: ".test",
-  //   animation: { backgroundColor: ["red", "green"], easing: ["cubic-bezier(0.175, 0.885, 0.320, 1.275)"] },
-  //   // alternate: true,
-  //   time: 500,
-  //   trigger: "click",
-  //   callback: callback,
-  // });
+  useAnimation({
+    target: ".test",
+    animation: { backgroundColor: ["red", "green"], easing: ["ease-out"] },
+    // alternate: true,
+    time: 500,
+    easing: "ease-out",
+    trigger: "click",
+    callback: callback,
+  });
 
   return (
     <div style={{ display: "flex" }}>
-      <div id="sidebar" style={{ height: "100vh", width: "30rem", backgroundColor: "black" }}>
+      <div id="sidebar" style={{ height: "100vh", flex: "0.6", backgroundColor: "black" }}>
         hello
       </div>
-      <div>
+      <div style={{ flex: "1" }}>
         <div className="test">hello world</div>
         <button className="other">Click Me</button>
       </div>

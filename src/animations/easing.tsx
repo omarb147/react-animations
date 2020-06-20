@@ -31,4 +31,4 @@ const easings = {
 
 export default easings;
 
-export type EasingsProps = typeof easings;
+export type EasingTypes = keyof typeof easings;
