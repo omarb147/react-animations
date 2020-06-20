@@ -1,4 +1,6 @@
 import { useAnimation } from "./animation";
+//@ts-ignore
+import { bounce } from "@pluginjs/keyframes";
 
 const callback = () => {
   console.log("external callback");
