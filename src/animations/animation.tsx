@@ -15,7 +15,8 @@ interface IUseAnimationProps {
   time: number;
   easing?: EasingTypes;
   alternate?: boolean;
-  trigger: { target?: string; action: string; delay?: string } | undefined;
+  spacingDelay?: number;
+  trigger: { target?: string; action: string } | undefined;
   callback?: () => void;
 }
 
@@ -35,8 +36,8 @@ export const useAnimation = (data: IUseAnimationProps) => {
   const [currentAnimations, setCurrentAnimations] = useState<AnimationsObject>();
   const [targetElements, setTargetElements] = useState<TargetElementsObject>();
   const [animationEnded, setAnimationEndedState] = useState<PlayStateObject>({});
-  const [isPlayingForwards, setIsPlayingForwards] = useState<PlayStateObject>({});
-  const { targets, animation, time, trigger, callback, alternate, easing } = data;
+  const [isPlayingForwards, setIsPlayingForwards] = useState<boolean>(true);
+  const { targets, animation, time, trigger, callback, alternate, easing, spacingDelay } = data;
 
   // 3rd useEffect -> updates the animation
   useEffect(() => {
@@ -54,16 +55,26 @@ export const useAnimation = (data: IUseAnimationProps) => {
     let initialPlaydirection: PlayStateObject = {};
     Object.keys(targetElementsObj).forEach((key) => (initialPlaydirection[key] = true));
 
-    setIsPlayingForwards(initialPlaydirection);
+    // setIsPlayingForwards(initialPlaydirection);
   }, []);
+
+  //load effects
+  useEffect(() => {
+    if (trigger?.action === "load" && currentAnimations) {
+      Object.keys(currentAnimations).forEach((key) => {
+        const animation = currentAnimations[key];
+        if (animation) animation.play();
+      });
+    }
+  }, [currentAnimations]);
 
   // 1st useEffect -> sets up animation and saves it into the state and deals with changes to the animation
   useEffect(() => {
     // Get all target elements and save them in state
-
     const animations: AnimationsObject = {};
     if (targetElements) {
       console.log(isPlayingForwards);
+      let spacingDelayCal = 0;
       Object.keys(targetElements).forEach((key, index) => {
         const element = targetElements[key];
         // not sure if this works!?
@@ -73,8 +84,9 @@ export const useAnimation = (data: IUseAnimationProps) => {
           const keyFrames = new KeyframeEffect(element, animation, {
             duration: time,
             fill: alternate ? "both" : "none",
-            direction: alternate ? (isPlayingForwards[key] ? "normal" : "reverse") : "normal",
+            direction: alternate ? (isPlayingForwards ? "normal" : "reverse") : "normal",
             easing: easing ? Easings[easing] : "ease",
+            delay: spacingDelay && trigger?.target ? spacingDelayCal : undefined,
           });
           const animationObj = new Animation(keyFrames, timeLine);
           animationObj.id = key;
@@ -83,15 +95,17 @@ export const useAnimation = (data: IUseAnimationProps) => {
             setAnimationEndedState({ ...animationEnded, [animationObj.id]: true });
           };
           animations[key] = animationObj;
+          spacingDelayCal += spacingDelay ? spacingDelay : 0;
           return;
         }
         animations[key] = undefined;
+        spacingDelayCal += spacingDelay ? spacingDelay : 0;
         return;
       });
 
       setCurrentAnimations(animations);
     }
-  }, [isPlayingForwards, targetElements]);
+  }, [targetElements, isPlayingForwards]);
 
   // 2nd useEffect -> deals with replaying animation
   useEffect(() => {
@@ -107,7 +121,7 @@ export const useAnimation = (data: IUseAnimationProps) => {
               alternate,
               { key: currentAnimations[key] },
               setAnimationEndedState,
-              { key: isPlayingForwards[key] },
+              isPlayingForwards,
               setIsPlayingForwards
             );
           }
@@ -136,21 +150,23 @@ export const useAnimation = (data: IUseAnimationProps) => {
 const alternateAnimationEvent = (
   currentAnimation: Animation | undefined,
   isPlayingForwards: boolean,
-  setPlayDirection: (_: PlayStateObject) => void,
+  setPlayDirection: (_: boolean) => void | undefined,
   setAnimationPlayState: (_: { [key: string]: boolean }) => void,
   key: string
 ) => {
   if (currentAnimation) {
-    currentAnimation.cancel();
     //@ts-ignore
     setAnimationPlayState((prevPlayState) => ({ ...prevPlayState, [key]: false }));
-    //@ts-ignore
-    if (isPlayingForwards) setPlayDirection((prevPlayDirection) => ({ ...prevPlayDirection, [key]: false }));
-
-    if (!isPlayingForwards)
+    currentAnimation.finish();
+    if (isPlayingForwards) {
       //@ts-ignore
-      setPlayDirection((prevPlayDirection: PlayState): PlayStateObject => ({ ...prevPlayDirection, [key]: true }));
-    currentAnimation.play();
+      setPlayDirection((prevPlayDirection) => !prevPlayDirection);
+      currentAnimation.play();
+    } else if (!isPlayingForwards) {
+      //@ts-ignore
+      setPlayDirection((prevPlayDirection) => !prevPlayDirection);
+      currentAnimation.play();
+    }
   }
 };
 
@@ -160,7 +176,8 @@ const normalAnimationEvent = (
   key: string
 ) => {
   if (currentAnimation) {
-    currentAnimation.cancel();
+    currentAnimation.finish();
+    // currentAnimation.cancel();
     //@ts-ignore
     setAnimationPlayState((prevPlayState) => ({ ...prevPlayState, [key]: false }));
     currentAnimation.play();
@@ -173,8 +190,8 @@ const setEventListenerTrigger = (
   alternate: boolean | undefined,
   currentAnimations: AnimationsObject | undefined,
   setAnimationPlayState: (_: { [key: string]: boolean }) => void,
-  isPlayingForwards: PlayStateObject | undefined,
-  setPlayDirection: (_: { [key: string]: boolean }) => void | undefined
+  isPlayingForwards: boolean | undefined,
+  setPlayDirection: (_: boolean) => void | undefined
 ) => {
   if (triggerElement) {
     if (alternate) {
@@ -183,14 +200,18 @@ const setEventListenerTrigger = (
           triggerAction,
           () => {
             if (currentAnimations) {
-              Object.keys(currentAnimations).forEach((key) => {
-                alternateAnimationEvent(
-                  currentAnimations[key],
-                  isPlayingForwards[key],
-                  setPlayDirection,
-                  setAnimationPlayState,
-                  key
-                );
+              Object.keys(currentAnimations).forEach((key, index) => {
+                if (index === 0) {
+                  alternateAnimationEvent(
+                    currentAnimations[key],
+                    isPlayingForwards,
+                    setPlayDirection,
+                    setAnimationPlayState,
+                    key
+                  );
+                } else {
+                  normalAnimationEvent(currentAnimations[key], setAnimationPlayState, key);
+                }
               });
             }
           },
@@ -208,6 +229,9 @@ const setEventListenerTrigger = (
   }
 };
 
+// const allAnimationsCompleted = () => {
+//   ob
+// }
 // const isAnimation = (animation:AnimationsObject | undefined | Animation): animation is Animation => {
 //   if((animation as Animation).currentTime){
 //     return true
