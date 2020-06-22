@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import Easings, { EasingTypes } from "./easing";
 
 // interface CustomKeyframe extends Omit<Keyframe, "easing"> {
@@ -14,7 +14,7 @@ interface IUseAnimationProps {
   time: number;
   easing?: EasingTypes;
   alternate?: boolean;
-  trigger: string | { target: string; action: string } | undefined;
+  trigger: { target?: string; action: string; delay?: string } | undefined;
   callback?: () => void;
 }
 
@@ -47,62 +47,71 @@ export const useAnimation = (data: IUseAnimationProps) => {
 
   // 2nd useEffect -> deals with replaying animation
   useEffect(() => {
-    console.log("called");
     const element = document.querySelector(target);
-    if (currentAnimation && element) {
-      if (typeof trigger === "string") {
-        const workingElement = element as HTMLElement;
-
-        //ALTERNATING ANIMATION HANDLER
-        if (alternate) {
-          workingElement.addEventListener(
-            trigger,
-            () => {
-              currentAnimation.cancel();
-              setAnimationEndedState(false);
-              if (isPlayingForwards) setIsPlayingForwards(false);
-              if (!isPlayingForwards) setIsPlayingForwards(true);
-              currentAnimation.play();
-            },
-            { once: true }
-          );
-        } else {
-          workingElement.addEventListener(trigger, () => {
-            currentAnimation.cancel();
-            setAnimationEndedState(false);
-            currentAnimation.play();
-          });
-        }
-      } else if (typeof trigger === "object") {
-        const triggerObject = document.querySelector(trigger.target) as HTMLElement;
-        if (triggerObject) {
-          if (alternate) {
-            triggerObject.addEventListener(
-              trigger.action,
-              () => {
-                currentAnimation.cancel();
-                setAnimationEndedState(false);
-                if (isPlayingForwards) setIsPlayingForwards(false);
-                if (!isPlayingForwards) setIsPlayingForwards(true);
-                currentAnimation.play();
-              },
-              { once: true }
-            );
-          } else {
-            triggerObject.addEventListener(
-              trigger.action,
-              () => {
-                currentAnimation.cancel();
-                setAnimationEndedState(false);
-                currentAnimation.play();
-              },
-              { once: true }
-            );
-          }
-        }
-      }
+    if (currentAnimation && element && trigger) {
+      const currentElement = element as HTMLElement;
+      let externalTriggerElement;
+      if (trigger.target) externalTriggerElement = document.querySelector(trigger.target) as HTMLElement;
+      setEventListenerTrigger(
+        externalTriggerElement ? externalTriggerElement : currentElement,
+        trigger.action,
+        alternate,
+        currentAnimation,
+        setAnimationEndedState,
+        isPlayingForwards,
+        setIsPlayingForwards
+      );
     }
   }, [currentAnimation]);
 
+  useEffect(() => {
+    console.log(currentAnimation);
+  }, [currentAnimation?.playState]);
+
   return [animationEnded];
+};
+
+const alternateAnimationEvent = (
+  currentAnimation: Animation,
+  isPlayingForwards: boolean,
+  setPlayDirection: (_: boolean) => void,
+  setAnimationPlayState: (_: boolean) => void
+) => {
+  currentAnimation.cancel();
+  setAnimationPlayState(false);
+  if (isPlayingForwards) setPlayDirection(false);
+  if (!isPlayingForwards) setPlayDirection(true);
+  currentAnimation.play();
+  console.log(currentAnimation.currentTime);
+};
+
+const normalAnimationEvent = (currentAnimation: Animation, setAnimationPlayState: (_: boolean) => void) => {
+  currentAnimation.cancel();
+  setAnimationPlayState(false);
+  currentAnimation.play();
+};
+
+const setEventListenerTrigger = (
+  triggerElement: HTMLElement,
+  triggerAction: string,
+  alternate: boolean | undefined,
+  currentAnimation: Animation,
+  setAnimationPlayState: (_: boolean) => void,
+  isPlayingForwards: boolean | undefined,
+  setPlayDirection: (_: boolean) => void | undefined
+) => {
+  if (alternate) {
+    if (isPlayingForwards !== undefined && setPlayDirection)
+      triggerElement.addEventListener(
+        triggerAction,
+        () => {
+          alternateAnimationEvent(currentAnimation, isPlayingForwards, setPlayDirection, setAnimationPlayState);
+        },
+        { once: true }
+      );
+  } else if (!alternate) {
+    triggerElement.addEventListener(triggerAction, () => {
+      normalAnimationEvent(currentAnimation, setAnimationPlayState);
+    });
+  }
 };

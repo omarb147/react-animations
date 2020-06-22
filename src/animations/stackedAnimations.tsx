@@ -21,7 +21,7 @@ export const useAllAnimations = () => {
     target: ".other",
     animation: { filter: ["blur(10px)", "none"], easing: ["ease-in"] },
     time: 2000,
-    trigger: "onmouseover",
+    trigger: { action: "onmouseover" },
     callback: callback,
   });
 };

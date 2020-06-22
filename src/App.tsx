@@ -7,6 +7,15 @@ const callback = () => {
 };
 
 const App = () => {
+  useAnimation({
+    target: "#sidebar",
+    animation: { flex: ["0.6", "0.08"] },
+    alternate: true,
+    easing: "easeInBack",
+    time: 1000,
+    trigger: { target: ".other", action: "click" },
+  });
+
   const [completed] = useAnimation({
     target: ".test",
     animation: { color: ["black", "red"], easing: ["ease-in"] },
@@ -17,21 +26,12 @@ const App = () => {
   });
 
   useAnimation({
-    target: "#sidebar",
-    animation: { flex: ["0.6", "0.08"] },
-    alternate: true,
-    easing: "easeInBack",
-    time: 1000,
-    trigger: { target: ".other", action: "click" },
-  });
-
-  useAnimation({
     target: ".test",
     animation: { backgroundColor: ["red", "green"], easing: ["ease-out"] },
     // alternate: true,
     time: 500,
     easing: "ease-out",
-    trigger: "click",
+    trigger: { action: "click" },
     callback: callback,
   });
 
