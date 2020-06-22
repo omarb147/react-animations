@@ -18,7 +18,7 @@ const App = () => {
 
   const [completed] = useAnimation({
     targets: [".test", "#sidebar"],
-    animation: { color: ["black", "red"], easing: ["ease-in"] },
+    animation: { color: ["green", "red"], easing: ["ease-in"] },
     alternate: true,
     time: 500,
     trigger: { target: ".other", action: "click" },
@@ -37,11 +37,12 @@ const App = () => {
 
   return (
     <div style={{ display: "flex" }}>
-      <div id="sidebar" style={{ height: "100vh", flex: "0.6", backgroundColor: "black" }}>
+      <div id="sidebar" style={{ height: "100vh", flex: "0.6", backgroundColor: "black", color: "white" }}>
         hello
       </div>
       <div style={{ flex: "1" }}>
         <div className="test">hello world</div>
+        <div className="test">Goodbve</div>
         <button className="other">Click Me</button>
       </div>
     </div>

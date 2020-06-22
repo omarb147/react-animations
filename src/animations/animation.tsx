@@ -43,9 +43,12 @@ export const useAnimation = (data: IUseAnimationProps) => {
     // Initially set the play direction  to be forwards
     const targetElementsObj: TargetElementsObject = {};
     targets.forEach((target) => {
-      const element = (document.querySelector(target) as HTMLElement) || undefined;
-      const id = shortid.generate();
-      targetElementsObj[id] = element;
+      const elements = document.querySelectorAll(target);
+      elements.forEach((element) => {
+        const singularElement = (element as HTMLElement) || undefined;
+        const id = shortid.generate();
+        targetElementsObj[id] = singularElement;
+      });
     });
     setTargetElements(targetElementsObj);
     let initialPlaydirection: PlayStateObject = {};
