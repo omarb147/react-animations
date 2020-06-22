@@ -9,7 +9,7 @@ const callback = () => {
 export const useAllAnimations = () => {
   // onclick animation
   useAnimation({
-    target: ".test",
+    targets: [".test"],
     animation: { opacity: [0, 1], color: ["red", "black"], easing: ["ease-in"] },
     time: 2000,
     trigger: { target: ".other", action: "onclick" },
@@ -18,7 +18,7 @@ export const useAllAnimations = () => {
 
   // on mouse over button animation
   useAnimation({
-    target: ".other",
+    targets: [".other"],
     animation: { filter: ["blur(10px)", "none"], easing: ["ease-in"] },
     time: 2000,
     trigger: { action: "onmouseover" },

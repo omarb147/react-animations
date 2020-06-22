@@ -8,7 +8,7 @@ const callback = () => {
 
 const App = () => {
   useAnimation({
-    target: "#sidebar",
+    targets: ["#sidebar"],
     animation: { flex: ["0.6", "0.08"] },
     alternate: true,
     easing: "easeInBack",
@@ -17,7 +17,7 @@ const App = () => {
   });
 
   const [completed] = useAnimation({
-    target: ".test",
+    targets: [".test", "#sidebar"],
     animation: { color: ["black", "red"], easing: ["ease-in"] },
     alternate: true,
     time: 500,
@@ -26,7 +26,7 @@ const App = () => {
   });
 
   useAnimation({
-    target: ".test",
+    targets: [".test", "#sidebar"],
     animation: { backgroundColor: ["red", "green"], easing: ["ease-out"] },
     // alternate: true,
     time: 500,

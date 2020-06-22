@@ -60,6 +60,7 @@ export const useAnimation = (data: IUseAnimationProps) => {
 
     const animations: AnimationsObject = {};
     if (targetElements) {
+      console.log(isPlayingForwards);
       Object.keys(targetElements).forEach((key, index) => {
         const element = targetElements[key];
         // not sure if this works!?
@@ -69,7 +70,7 @@ export const useAnimation = (data: IUseAnimationProps) => {
           const keyFrames = new KeyframeEffect(element, animation, {
             duration: time,
             fill: alternate ? "both" : "none",
-            direction: alternate ? (isPlayingForwards ? "normal" : "reverse") : "normal",
+            direction: alternate ? (isPlayingForwards[key] ? "normal" : "reverse") : "normal",
             easing: easing ? Easings[easing] : "ease",
           });
           const animationObj = new Animation(keyFrames, timeLine);
@@ -101,30 +102,29 @@ export const useAnimation = (data: IUseAnimationProps) => {
               element,
               trigger.action,
               alternate,
-              currentAnimations[key],
+              { key: currentAnimations[key] },
               setAnimationEndedState,
-              isPlayingForwards,
+              { key: isPlayingForwards[key] },
               setIsPlayingForwards
             );
           }
         });
+      } else if (trigger.target) {
+        let externalTriggerElement;
+        if (trigger.target) externalTriggerElement = document.querySelector(trigger.target) as HTMLElement;
+        setEventListenerTrigger(
+          externalTriggerElement,
+          trigger.action,
+          alternate,
+          currentAnimations,
+          setAnimationEndedState,
+          isPlayingForwards,
+          setIsPlayingForwards
+        );
       }
-
-      //2. if external target -> set 1 event listner that plays all animations
-
-      const currentElement = element as HTMLElement;
-      let externalTriggerElement;
-      if (trigger.target) externalTriggerElement = document.querySelector(trigger.target) as HTMLElement;
-      setEventListenerTrigger(
-        externalTriggerElement ? externalTriggerElement : currentElement,
-        trigger.action,
-        alternate,
-        currentAnimation,
-        setAnimationEndedState,
-        isPlayingForwards,
-        setIsPlayingForwards
-      );
     }
+
+    //2. if external target -> set 1 event listner that plays all animations
   }, [currentAnimations, targetElements]);
 
   return [animationEnded];
@@ -133,51 +133,81 @@ export const useAnimation = (data: IUseAnimationProps) => {
 const alternateAnimationEvent = (
   currentAnimation: Animation | undefined,
   isPlayingForwards: boolean,
-  setPlayDirection: (_: { [key: string]: boolean }) => void,
-  setAnimationPlayState: (_: { [key: string]: boolean }) => void
+  setPlayDirection: (_: PlayStateObject) => void,
+  setAnimationPlayState: (_: { [key: string]: boolean }) => void,
+  key: string
 ) => {
   if (currentAnimation) {
     currentAnimation.cancel();
-    setAnimationPlayState(false);
-    if (isPlayingForwards) setPlayDirection(false);
-    if (!isPlayingForwards) setPlayDirection(true);
+    //@ts-ignore
+    setAnimationPlayState((prevPlayState) => ({ ...prevPlayState, [key]: false }));
+    //@ts-ignore
+    if (isPlayingForwards) setPlayDirection((prevPlayDirection) => ({ ...prevPlayDirection, [key]: false }));
+
+    if (!isPlayingForwards)
+      //@ts-ignore
+      setPlayDirection((prevPlayDirection: PlayState): PlayStateObject => ({ ...prevPlayDirection, [key]: true }));
     currentAnimation.play();
-    console.log(currentAnimation.currentTime);
   }
 };
 
 const normalAnimationEvent = (
   currentAnimation: Animation | undefined,
-  setAnimationPlayState: (_: { [key: string]: boolean }) => void
+  setAnimationPlayState: (_: { [key: string]: boolean }) => void,
+  key: string
 ) => {
   if (currentAnimation) {
     currentAnimation.cancel();
-    setAnimationPlayState(false);
+    //@ts-ignore
+    setAnimationPlayState((prevPlayState) => ({ ...prevPlayState, [key]: false }));
     currentAnimation.play();
   }
 };
 
 const setEventListenerTrigger = (
-  triggerElement: HTMLElement,
+  triggerElement: HTMLElement | undefined,
   triggerAction: string,
   alternate: boolean | undefined,
-  currentAnimation: Animation | undefined,
+  currentAnimations: AnimationsObject | undefined,
   setAnimationPlayState: (_: { [key: string]: boolean }) => void,
-  isPlayingForwards: boolean | undefined,
+  isPlayingForwards: PlayStateObject | undefined,
   setPlayDirection: (_: { [key: string]: boolean }) => void | undefined
 ) => {
-  if (alternate) {
-    if (isPlayingForwards !== undefined && setPlayDirection)
-      triggerElement.addEventListener(
-        triggerAction,
-        () => {
-          alternateAnimationEvent(currentAnimation, isPlayingForwards, setPlayDirection, setAnimationPlayState);
-        },
-        { once: true }
-      );
-  } else if (!alternate) {
-    triggerElement.addEventListener(triggerAction, () => {
-      normalAnimationEvent(currentAnimation, setAnimationPlayState);
-    });
+  if (triggerElement) {
+    if (alternate) {
+      if (isPlayingForwards !== undefined && setPlayDirection)
+        triggerElement.addEventListener(
+          triggerAction,
+          () => {
+            if (currentAnimations) {
+              Object.keys(currentAnimations).forEach((key) => {
+                alternateAnimationEvent(
+                  currentAnimations[key],
+                  isPlayingForwards[key],
+                  setPlayDirection,
+                  setAnimationPlayState,
+                  key
+                );
+              });
+            }
+          },
+          { once: true }
+        );
+    } else if (!alternate) {
+      triggerElement.addEventListener(triggerAction, () => {
+        if (currentAnimations) {
+          Object.keys(currentAnimations).forEach((key) => {
+            normalAnimationEvent(currentAnimations[key], setAnimationPlayState, key);
+          });
+        }
+      });
+    }
   }
 };
+
+// const isAnimation = (animation:AnimationsObject | undefined | Animation): animation is Animation => {
+//   if((animation as Animation).currentTime){
+//     return true
+//   }
+//   return false
+// }
