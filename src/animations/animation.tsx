@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import Easings, { EasingTypes } from "./easing";
 import shortid from "shortid";
+import { isArray } from "util";
+import { Console } from "console";
 
 // interface CustomKeyframe extends Omit<Keyframe, "easing"> {
 //   easing?: EasingTypes;
@@ -9,9 +11,11 @@ import shortid from "shortid";
 // interface CustomPropertyIndexedKeyFrames extends Omit<, "easing"> {
 //   easing?: EasingTypes | EasingTypes[];
 // }
+
+const compositeObjectStandardKeys = ["composite", "easing", "offset"];
 interface IUseAnimationProps {
   targets: string[];
-  animation: Keyframe[] | PropertyIndexedKeyframes;
+  animation: PropertyIndexedKeyframes;
   time: number;
   easing?: EasingTypes;
   alternate?: boolean;
@@ -32,8 +36,13 @@ interface TargetElementsObject {
   [index: string]: HTMLElement | undefined;
 }
 
+interface IAnimationStyles {
+  [id: string]: PropertyIndexedKeyframes;
+}
+
 export const useAnimation = (data: IUseAnimationProps) => {
   const [currentAnimations, setCurrentAnimations] = useState<AnimationsObject>();
+  const [animationStyles, setDefaultAnimationStyles] = useState<IAnimationStyles>();
   const [targetElements, setTargetElements] = useState<TargetElementsObject>();
   const [animationEnded, setAnimationEndedState] = useState<PlayStateObject>({});
   const [isPlayingForwards, setIsPlayingForwards] = useState<boolean>(true);
@@ -41,20 +50,38 @@ export const useAnimation = (data: IUseAnimationProps) => {
 
   // 3rd useEffect -> updates the animation
   useEffect(() => {
-    // Initially set the play direction  to be forwards
+    const styleProperties = Object.keys(animation).filter((key) => !compositeObjectStandardKeys.includes(key));
+    const animationStyleValues: IAnimationStyles = {};
+    // Get the elements which are being targetted
     const targetElementsObj: TargetElementsObject = {};
     targets.forEach((target) => {
       const elements = document.querySelectorAll(target);
       elements.forEach((element) => {
         const singularElement = (element as HTMLElement) || undefined;
+
         const id = shortid.generate();
+        animationStyleValues[id] = Object.assign({}, animation);
+        styleProperties.forEach((styleName) => {
+          //@ts-ignore
+          const typedStyle = styleName as CSStyleDeclaration;
+          const style = singularElement.style[typedStyle];
+          //@ts-ignore
+          if (animationStyleValues[id][typedStyle][0] === "_initial") {
+            //@ts-ignore
+            animationStyleValues[id][styleName] = [style || "inherit", ...animationStyleValues[id][styleName]];
+          }
+        });
         targetElementsObj[id] = singularElement;
       });
     });
-    setTargetElements(targetElementsObj);
+
     let initialPlaydirection: PlayStateObject = {};
     Object.keys(targetElementsObj).forEach((key) => (initialPlaydirection[key] = true));
 
+    //get the current state of the object being changes
+    console.log(animationStyleValues);
+    setDefaultAnimationStyles(animationStyleValues);
+    setTargetElements(targetElementsObj);
     // setIsPlayingForwards(initialPlaydirection);
   }, []);
 
@@ -73,15 +100,16 @@ export const useAnimation = (data: IUseAnimationProps) => {
     // Get all target elements and save them in state
     const animations: AnimationsObject = {};
     if (targetElements) {
-      console.log(isPlayingForwards);
       let spacingDelayCal = 0;
       Object.keys(targetElements).forEach((key, index) => {
         const element = targetElements[key];
+        // insert animation data]
+
         // not sure if this works!?
         setAnimationEndedState({ ...animationEnded, [key]: true });
-        if (element) {
+        if (element && animationStyles) {
           const timeLine = document.timeline;
-          const keyFrames = new KeyframeEffect(element, animation, {
+          const keyFrames = new KeyframeEffect(element, animationStyles[key], {
             duration: time,
             fill: alternate ? "both" : "none",
             direction: alternate ? (isPlayingForwards ? "normal" : "reverse") : "normal",

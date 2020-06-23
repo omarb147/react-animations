@@ -18,13 +18,12 @@ const App = () => {
 
   const [completed] = useAnimation({
     targets: ["li"],
-    animation: { width: ["20%", "100%"] },
+    animation: { width: ["_initial", "50%", "100%", "50%"], color: ["_initial", "green", "yellow", "red"] },
     alternate: true,
-    spacingDelay: 500,
-    easing: "easeInBack",
+    spacingDelay: 200,
+    easing: "ease",
     time: 1000,
     trigger: { target: ".other", action: "click" },
-    callback: callback,
   });
 
   // useAnimation({
@@ -49,7 +48,17 @@ const App = () => {
         <ul style={{ textDecoration: "none", listStyle: "none" }}>
           <li
             className="testSubject"
-            style={{ backgroundColor: "blue", marginTop: "1rem", width: "20%", padding: "1rem" }}>
+            style={{ backgroundColor: "blue", marginTop: "1rem", width: "30%", padding: "1rem", color: "green" }}>
+            test
+          </li>
+          <li
+            className="testSubject"
+            style={{ backgroundColor: "blue", marginTop: "1rem", width: "20%", padding: "1rem", color: "red" }}>
+            test
+          </li>
+          <li
+            className="testSubject"
+            style={{ backgroundColor: "blue", marginTop: "1rem", width: "30%", padding: "1rem" }}>
             test
           </li>
           <li
@@ -59,17 +68,7 @@ const App = () => {
           </li>
           <li
             className="testSubject"
-            style={{ backgroundColor: "blue", marginTop: "1rem", width: "20%", padding: "1rem" }}>
-            test
-          </li>
-          <li
-            className="testSubject"
-            style={{ backgroundColor: "blue", marginTop: "1rem", width: "20%", padding: "1rem" }}>
-            test
-          </li>
-          <li
-            className="testSubject"
-            style={{ backgroundColor: "blue", marginTop: "1rem", width: "20%", padding: "1rem" }}>
+            style={{ backgroundColor: "blue", marginTop: "1rem", width: "50%", padding: "1rem" }}>
             test
           </li>
           <li
