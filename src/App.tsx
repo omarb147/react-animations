@@ -20,9 +20,11 @@ const App = () => {
   const [playAnimation] = useAnimation({
     targets: ["#sidebar"],
     animation: { flex: ["0.6", "0.08"] },
-    alternate: true,
+    commitStyles: true,
+    // alternate: true,
     easing: "easeInBack",
     time: 1000,
+    trigger: { target: apiData },
   });
 
   const [completed] = useAnimation({
@@ -54,7 +56,7 @@ const App = () => {
 
   return (
     <div style={{ display: "flex" }}>
-      {console.log(playAnimation)}
+      {console.log(apiData)}
       <div id="sidebar" style={{ height: "100vh", flex: "0.6", backgroundColor: "black", color: "white" }}>
         hello
       </div>
