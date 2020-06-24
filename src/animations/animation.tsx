@@ -1,8 +1,6 @@
 import { useEffect, useState } from "react";
 import Easings, { EasingTypes } from "./easing";
 import shortid from "shortid";
-import { isArray } from "util";
-import { Console } from "console";
 
 // interface CustomKeyframe extends Omit<Keyframe, "easing"> {
 //   easing?: EasingTypes;
@@ -20,7 +18,7 @@ interface IUseAnimationProps {
   easing?: EasingTypes;
   alternate?: boolean;
   spacingDelay?: number;
-  trigger: { target?: string; action: string } | undefined;
+  trigger?: { target?: string; action?: string };
   callback?: () => void;
 }
 
@@ -46,6 +44,7 @@ export const useAnimation = (data: IUseAnimationProps) => {
   const [targetElements, setTargetElements] = useState<TargetElementsObject>();
   const [animationEnded, setAnimationEndedState] = useState<PlayStateObject>({});
   const [isPlayingForwards, setIsPlayingForwards] = useState<boolean>(true);
+  const [animationPlayTrigger, setAnimationPlayTrigger] = useState<() => void>(() => {});
   const { targets, animation, time, trigger, callback, alternate, easing, spacingDelay } = data;
 
   // 3rd useEffect -> updates the animation
@@ -97,6 +96,7 @@ export const useAnimation = (data: IUseAnimationProps) => {
 
   // 1st useEffect -> sets up animation and saves it into the state and deals with changes to the animation
   useEffect(() => {
+    console.log(trigger?.target);
     // Get all target elements and save them in state
     const animations: AnimationsObject = {};
     if (targetElements) {
@@ -137,12 +137,12 @@ export const useAnimation = (data: IUseAnimationProps) => {
 
   // 2nd useEffect -> deals with replaying animation
   useEffect(() => {
-    if (currentAnimations && targetElements && trigger) {
+    if (currentAnimations && targetElements && trigger && trigger?.action !== undefined) {
       //1. if self target -> trigger.target not defined -> foreach element set event listener
       if (!trigger.target) {
         Object.keys(targetElements).forEach((key, index) => {
           const element = targetElements[key];
-          if (element) {
+          if (element && trigger.action) {
             setEventListenerTrigger(
               element,
               trigger.action,
@@ -154,7 +154,7 @@ export const useAnimation = (data: IUseAnimationProps) => {
             );
           }
         });
-      } else if (trigger.target) {
+      } else if (typeof trigger.target === "string") {
         let externalTriggerElement;
         if (trigger.target) externalTriggerElement = document.querySelector(trigger.target) as HTMLElement;
         setEventListenerTrigger(
@@ -168,11 +168,44 @@ export const useAnimation = (data: IUseAnimationProps) => {
         );
       }
     }
-
     //2. if external target -> set 1 event listner that plays all animations
-  }, [currentAnimations, targetElements]);
+  }, [currentAnimations, targetElements, trigger?.target]);
 
-  return [animationEnded];
+  useEffect(() => {
+    const animationPlay = () => {
+      if (trigger && !trigger.target && currentAnimations) {
+        if (alternate) {
+          Object.keys(currentAnimations).forEach((key, index) => {
+            if (index === 0) {
+              alternateAnimationEvent(
+                currentAnimations[key],
+                isPlayingForwards,
+                setIsPlayingForwards,
+                setAnimationEndedState,
+                key
+              );
+            } else {
+              normalAnimationEvent(currentAnimations[key], setAnimationEndedState, key);
+            }
+          });
+        } else if (!alternate) {
+          if (currentAnimations) {
+            Object.keys(currentAnimations).forEach((key) => {
+              normalAnimationEvent(currentAnimations[key], setAnimationEndedState, key);
+            });
+          }
+        }
+      }
+    };
+
+    setAnimationPlayTrigger(animationPlay);
+  }, [currentAnimations, trigger]);
+
+  const manualStopAnimation = () => {
+    //consider alternate/non alternate
+  };
+
+  return [animationPlayTrigger];
 };
 
 const alternateAnimationEvent = (

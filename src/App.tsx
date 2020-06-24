@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useAnimation } from "./animations/animation";
 // import { useAllAnimations } from "./animations/stackedAnimations";
 
@@ -7,6 +7,7 @@ const callback = () => {
 };
 
 const App = () => {
+  const [apiData, setApiDataState] = useState(false);
   // useAnimation({
   //   targets: ["#sidebar"],
   //   animation: { flex: ["0.6", "0.08"] },
@@ -15,6 +16,14 @@ const App = () => {
   //   time: 1000,
   //   trigger: { target: ".other", action: "click" },
   // });
+
+  const [playAnimation] = useAnimation({
+    targets: ["#sidebar"],
+    animation: { flex: ["0.6", "0.08"] },
+    alternate: true,
+    easing: "easeInBack",
+    time: 1000,
+  });
 
   const [completed] = useAnimation({
     targets: ["li"],
@@ -36,9 +45,16 @@ const App = () => {
   //   trigger: { action: "click" },
   //   callback: callback,
   // });
+  useEffect(() => {
+    window.setTimeout(() => {
+      setApiDataState(true);
+      console.log("animation done ");
+    }, 2000);
+  }, []);
 
   return (
     <div style={{ display: "flex" }}>
+      {console.log(playAnimation)}
       <div id="sidebar" style={{ height: "100vh", flex: "0.6", backgroundColor: "black", color: "white" }}>
         hello
       </div>
