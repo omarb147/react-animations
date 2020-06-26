@@ -8,50 +8,58 @@ const callback = () => {
 
 const App = () => {
   const [apiData, setApiDataState] = useState(false);
-  // useAnimation({
+
+  // const [playAnimation, playAnimationEnded] = useAnimation({
   //   targets: ["#sidebar"],
   //   animation: { flex: ["0.6", "0.08"] },
+  //   commitStyles: true,
   //   alternate: true,
   //   easing: "easeInBack",
   //   time: 1000,
-  //   trigger: { target: ".other", action: "click" },
   // });
 
-  const [playAnimation] = useAnimation({
+  useAnimation({
     targets: ["#sidebar"],
-    animation: { flex: ["0.6", "0.08"] },
+    animation: { backgroundColor: ["green", "red"] },
     commitStyles: true,
-    // alternate: true,
-    easing: "easeInBack",
-    time: 1000,
+    easing: "easeInOutBack",
+    time: 1500,
+    iterations: 100,
     trigger: { target: apiData },
   });
 
-  const [completed] = useAnimation({
-    targets: ["li"],
-    animation: { width: ["_initial", "50%", "100%", "50%"], color: ["_initial", "green", "yellow", "red"] },
-    alternate: true,
-    spacingDelay: 200,
-    easing: "ease",
-    time: 1000,
-    trigger: { target: ".other", action: "click" },
-  });
+  // const [playOtherAnimation] = useAnimation({
+  //   targets: ["li"],
+  //   animation: { width: ["_initial", "50%", "100%", "50%"], color: ["_initial", "green", "yellow", "red"] },
+  //   alternate: true,
+  //   spacingDelay: 200,
+  //   easing: "ease",
+  //   time: 1000,
+  //   iterations: 3,
+  //   trigger: { target: ".other", action: "click" },
+  // });
 
   // useAnimation({
-  //   targets: ["li"],
+  //   targets: ["#sidebar"],
   //   animation: { backgroundColor: ["red", "green"], easing: ["ease-out"] },
-  //   // alternate: true,
+  //   alternate: true,
+  //   iterations: 100,
   //   spacingDelay: 200,
   //   time: 5000,
   //   easing: "ease-out",
   //   trigger: { action: "click" },
-  //   callback: callback,
+  //   // callback: callback,
   // });
+
   useEffect(() => {
     window.setTimeout(() => {
       setApiDataState(true);
       console.log("animation done ");
     }, 2000);
+    window.setTimeout(() => {
+      setApiDataState(false);
+      console.log("animation done ");
+    }, 10000);
   }, []);
 
   return (
@@ -95,7 +103,22 @@ const App = () => {
             test
           </li>
         </ul>
-        <button className="other">Click Me</button>
+        <button
+          className="other"
+          onClick={() => {
+            //@ts-ignore
+            // playAnimation.play();
+          }}>
+          Click Me
+        </button>
+        <button
+          className="other"
+          onClick={() => {
+            //@ts-ignore
+            // playOtherAnimation.play();
+          }}>
+          play other animation
+        </button>
       </div>
     </div>
   );
