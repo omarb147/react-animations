@@ -18,7 +18,7 @@ interface IUseAnimationProps {
   time: number;
   easing?: EasingTypes;
   alternate?: boolean;
-  iterations?: number;
+  continuous?: boolean;
   spacingDelay?: number;
   trigger?: { target?: string | boolean; action?: string };
   callback?: () => void;
@@ -44,10 +44,10 @@ export const useAnimation = (data: IUseAnimationProps) => {
   const [currentAnimations, setCurrentAnimations] = useState<AnimationsObject>();
   const [animationStyles, setDefaultAnimationStyles] = useState<IAnimationStyles>();
   const [targetElements, setTargetElements] = useState<TargetElementsObject>();
-  const [animationEnded, setAnimationEndedState] = useState<PlayStateObject>({});
+  const [animationPlaying, setAnimationPlayState] = useState<boolean>(false);
   const [isPlayingForwards, setIsPlayingForwards] = useState<boolean>(true);
-  const [currentIteration, updateCurrentIteration] = useState<number>(1);
   const [manualAnimationTrigger, setAnimationTrigger] = useState<{ play: () => void }>({ play: () => {} });
+  const [componentCount, setComponentCount] = useState<number>(0);
   const {
     targets,
     animation,
@@ -58,7 +58,7 @@ export const useAnimation = (data: IUseAnimationProps) => {
     easing,
     spacingDelay,
     commitStyles,
-    iterations,
+    continuous,
   } = data;
 
   // 3rd useEffect -> updates the animation
@@ -93,6 +93,7 @@ export const useAnimation = (data: IUseAnimationProps) => {
 
     //get the current state of the object being changes
     setDefaultAnimationStyles(animationStyleValues);
+    setComponentCount(Object.keys(targetElementsObj).length);
     setTargetElements(targetElementsObj);
     // setIsPlayingForwards(initialPlaydirection);
   }, []);
@@ -118,22 +119,36 @@ export const useAnimation = (data: IUseAnimationProps) => {
         // insert animation data]
 
         // not sure if this works!?
-        // setAnimationEndedState({ ...animationEnded, [key]: true });
+
         if (element && animationStyles) {
+          console.log("back here again");
           const timeLine = document.timeline;
           const keyFrames = new KeyframeEffect(element, animationStyles[key], {
             duration: time,
             fill: alternate || commitStyles ? "both" : "none",
             direction: alternate ? (isPlayingForwards ? "normal" : "reverse") : "normal",
             easing: easing ? Easings[easing] : "ease",
-            iterations: !alternate && iterations ? iterations : undefined,
+            // iterations: !alternate && iterations ? iterations : undefined,
             delay: spacingDelay && trigger?.target ? spacingDelayCal : undefined,
           });
           const animationObj = new Animation(keyFrames, timeLine);
           animationObj.id = key;
           animationObj.onfinish = () => {
-            if (callback) callback();
-            setAnimationEndedState({ ...animationEnded, [animationObj.id]: true });
+            if (continuous && !alternate) {
+              // console.log(animationObj.currentTime);
+              // if (spacingDelay) {
+              //   window.setTimeout(() => {
+              //     animationObj.reverse();
+              //   }, spacingDelay * (componentCount - 1));
+              // } else if (!spacingDelay) {
+              animationObj.reverse();
+              // }
+              // }
+              if (index === componentCount - 1) {
+                setAnimationPlayState(false);
+              }
+              if (callback) callback();
+            }
           };
           animations[key] = animationObj;
           spacingDelayCal += spacingDelay ? spacingDelay : 0;
@@ -161,7 +176,7 @@ export const useAnimation = (data: IUseAnimationProps) => {
               trigger.action,
               alternate,
               { key: currentAnimations[key] },
-              setAnimationEndedState,
+              setAnimationPlayState,
               isPlayingForwards,
               setIsPlayingForwards
             );
@@ -175,7 +190,7 @@ export const useAnimation = (data: IUseAnimationProps) => {
           trigger.action,
           alternate,
           currentAnimations,
-          setAnimationEndedState,
+          setAnimationPlayState,
           isPlayingForwards,
           setIsPlayingForwards
         );
@@ -188,23 +203,24 @@ export const useAnimation = (data: IUseAnimationProps) => {
                   currentAnimations[key],
                   isPlayingForwards,
                   setIsPlayingForwards,
-                  setAnimationEndedState,
+                  setAnimationPlayState,
                   key
                 );
               } else {
-                normalAnimationEvent(currentAnimations[key], setAnimationEndedState, key);
+                normalAnimationEvent(currentAnimations[key], setAnimationPlayState, key, index);
               }
             });
           } else if (!alternate) {
             if (currentAnimations) {
-              Object.keys(currentAnimations).forEach((key) => {
-                normalAnimationEvent(currentAnimations[key], setAnimationEndedState, key);
+              Object.keys(currentAnimations).forEach((key, index) => {
+                normalAnimationEvent(currentAnimations[key], setAnimationPlayState, key, index);
               });
             }
           }
         } else {
           Object.keys(currentAnimations).forEach((key, index) => {
-            currentAnimations[key]?.finish();
+            const animation = currentAnimations[key];
+            if (animation && animation.playState === "running") currentAnimations[key]?.finish();
           });
         }
       }
@@ -223,43 +239,48 @@ export const useAnimation = (data: IUseAnimationProps) => {
                 currentAnimations[key],
                 isPlayingForwards,
                 setIsPlayingForwards,
-                setAnimationEndedState,
+                setAnimationPlayState,
                 key
               );
             } else {
-              normalAnimationEvent(currentAnimations[key], setAnimationEndedState, key);
+              normalAnimationEvent(currentAnimations[key], setAnimationPlayState, key, index);
             }
           });
         } else if (!alternate) {
           if (currentAnimations) {
-            Object.keys(currentAnimations).forEach((key) => {
-              normalAnimationEvent(currentAnimations[key], setAnimationEndedState, key);
+            Object.keys(currentAnimations).forEach((key, index) => {
+              normalAnimationEvent(currentAnimations[key], setAnimationPlayState, key, index);
             });
           }
         }
       }
     };
+
+    const animationStop = () => {
+      if (currentAnimations) {
+        Object.keys(currentAnimations).forEach((key, index) => {
+          const animation = currentAnimations[key];
+          if (animation) animation.cancel();
+        });
+      }
+    };
     //@ts-ignore
-    setAnimationTrigger((currentState) => ({ ...currentState, play: animationPlay }));
+    setAnimationTrigger((currentState) => ({ ...currentState, play: animationPlay, stop: animationStop }));
   }, [currentAnimations]);
 
-  // if (!trigger) {
-  return [manualAnimationTrigger, animationEnded];
-  // }
-
-  // return [animationEnded];
+  return [manualAnimationTrigger, animationPlaying];
 };
 
 const alternateAnimationEvent = (
   currentAnimation: Animation | undefined,
   isPlayingForwards: boolean,
   setPlayDirection: (_: boolean) => void | undefined,
-  setAnimationPlayState: (_: { [key: string]: boolean }) => void,
+  setAnimationPlayState: (_: boolean) => void,
   key: string
 ) => {
   if (currentAnimation) {
     //@ts-ignore
-    // setAnimationPlayState((prevPlayState) => ({ ...prevPlayState, [key]: false }));
+    setAnimationPlayState(true);
     currentAnimation.finish();
     if (isPlayingForwards) {
       //@ts-ignore
@@ -275,14 +296,17 @@ const alternateAnimationEvent = (
 
 const normalAnimationEvent = (
   currentAnimation: Animation | undefined,
-  setAnimationPlayState: (_: { [key: string]: boolean }) => void,
-  key: string
+  setAnimationPlayState: (_: boolean) => void,
+  key: string,
+  index: number
 ) => {
   if (currentAnimation) {
     // currentAnimation.finish();
+
+    if (index === 0) setAnimationPlayState(true);
     currentAnimation.cancel();
     //@ts-ignore
-    // setAnimationPlayState((prevPlayState) => ({ ...prevPlayState, [key]: false }));
+
     currentAnimation.play();
   }
 };
@@ -292,7 +316,7 @@ const setEventListenerTrigger = (
   triggerAction: string,
   alternate: boolean | undefined,
   currentAnimations: AnimationsObject | undefined,
-  setAnimationPlayState: (_: { [key: string]: boolean }) => void,
+  setAnimationPlayState: (_: boolean) => void,
   isPlayingForwards: boolean | undefined,
   setPlayDirection: (_: boolean) => void | undefined
 ) => {
@@ -313,7 +337,7 @@ const setEventListenerTrigger = (
                     key
                   );
                 } else {
-                  normalAnimationEvent(currentAnimations[key], setAnimationPlayState, key);
+                  normalAnimationEvent(currentAnimations[key], setAnimationPlayState, key, index);
                 }
               });
             }
@@ -323,8 +347,8 @@ const setEventListenerTrigger = (
     } else if (!alternate) {
       triggerElement.addEventListener(triggerAction, () => {
         if (currentAnimations) {
-          Object.keys(currentAnimations).forEach((key) => {
-            normalAnimationEvent(currentAnimations[key], setAnimationPlayState, key);
+          Object.keys(currentAnimations).forEach((key, index) => {
+            normalAnimationEvent(currentAnimations[key], setAnimationPlayState, key, index);
           });
         }
       });
