@@ -355,13 +355,3 @@ const setEventListenerTrigger = (
     }
   }
 };
-
-// const allAnimationsCompleted = () => {
-//   ob
-// }
-// const isAnimation = (animation:AnimationsObject | undefined | Animation): animation is Animation => {
-//   if((animation as Animation).currentTime){
-//     return true
-//   }
-//   return false
-// }

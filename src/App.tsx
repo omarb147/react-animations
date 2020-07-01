@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useAnimation } from "./animations/animation";
+import { useAnimationMain } from "./animations/animationV2";
 
 const callback = () => {
   console.log("external callback");
@@ -8,7 +9,7 @@ const callback = () => {
 const App = () => {
   const [apiData, setApiDataState] = useState(false);
 
-  const [playOtherAnimation, animationIsPlaying] = useAnimation({
+  useAnimationMain({
     targets: ["li"],
     animation: { width: ["_initial", "50%", "100%", "50%"], color: ["_initial", "green", "yellow", "red"] },
     commitStyles: true,
@@ -20,27 +21,39 @@ const App = () => {
     trigger: { target: ".other", action: "click" },
   });
 
-  useAnimation({
-    targets: ["#sidebar"],
-    animation: { backgroundColor: ["green", "red"] },
-    commitStyles: true,
-    easing: "easeInOutBack",
-    time: 1500,
-    iterations: 100,
-    //@ts-ignore
-    trigger: { target: animationIsPlaying },
-    callback: () => {},
-  });
+  // const [playOtherAnimation, animationIsPlaying] = useAnimation({
+  //   targets: ["li"],
+  //   animation: { width: ["_initial", "50%", "100%", "50%"], color: ["_initial", "green", "yellow", "red"] },
+  //   commitStyles: true,
+  //   alternate: true,
+  //   spacingDelay: 200,
+  //   easing: "ease",
+  //   time: 1000,
+  //   continuous: true,
+  //   trigger: { target: ".other", action: "click" },
+  // });
 
-  useAnimation({
-    targets: ["#sidebar"],
-    animation: { backgroundColor: ["red", "green"], easing: ["ease-out"] },
-    alternate: true,
-    spacingDelay: 200,
-    time: 5000,
-    easing: "ease-out",
-    trigger: { action: "click" },
-  });
+  // useAnimation({
+  //   targets: ["#sidebar"],
+  //   animation: { backgroundColor: ["green", "red"] },
+  //   commitStyles: true,
+  //   easing: "easeInOutBack",
+  //   time: 1500,
+  //   iterations: 100,
+  //   //@ts-ignore
+  //   trigger: { target: animationIsPlaying },
+  //   callback: () => {},
+  // });
+
+  // useAnimation({
+  //   targets: ["#sidebar"],
+  //   animation: { backgroundColor: ["red", "green"], easing: ["ease-out"] },
+  //   alternate: true,
+  //   spacingDelay: 200,
+  //   time: 5000,
+  //   easing: "ease-out",
+  //   trigger: { action: "click" },
+  // });
 
   return (
     <div style={{ display: "flex" }}>
