@@ -17,6 +17,7 @@ interface IUseAnimationProps {
 
 interface IAnimationState {
   targetElements: { [index: string]: HTMLElement | undefined };
+  animationStyles: { [key: string]: PropertyIndexedKeyframes };
   animationObjects: { [index: string]: Animation | undefined };
   manualAnimationTrigger: { play: () => void; stop: () => void };
   animationPlayState: boolean;
@@ -32,6 +33,7 @@ interface IAction {
 const initialAnimationState: IAnimationState = {
   targetElements: {},
   animationObjects: {},
+  animationStyles: {},
   manualAnimationTrigger: { play: () => {}, stop: () => {} },
   animationPlayDirection: false,
   animationPlayState: false,
@@ -52,7 +54,17 @@ const setAnimations = (data: {
   payload: data,
 });
 
-type ActionTypes = ReturnType<typeof setTargetElements> | ReturnType<typeof setAnimations>;
+const setAnimationStyles = (data: {
+  [key: string]: PropertyIndexedKeyframes;
+}): { type: "SET_ANIMATION_STYLES"; payload: { [key: string]: PropertyIndexedKeyframes } } => ({
+  type: "SET_ANIMATION_STYLES",
+  payload: data,
+});
+
+type ActionTypes =
+  | ReturnType<typeof setTargetElements>
+  | ReturnType<typeof setAnimations>
+  | ReturnType<typeof setAnimationStyles>;
 
 const animationsReducer = (state: IAnimationState, action: ActionTypes): IAnimationState => {
   switch (action.type) {
@@ -61,6 +73,9 @@ const animationsReducer = (state: IAnimationState, action: ActionTypes): IAnimat
     }
     case "SET_ANIMATIONS": {
       return { ...state, animationObjects: { ...action.payload } };
+    }
+    case "SET_ANIMATION_STYLES": {
+      return { ...state, animationStyles: { ...action.payload } };
     }
     default:
       return state;
@@ -79,9 +94,8 @@ const isHTMLElement = (value: Element): value is HTMLElement => {
   return (value as HTMLElement).style !== undefined;
 };
 
-const useSetUpTargets = (
+export const useSetUpTargets = (
   dispatch: React.Dispatch<ActionTypes>,
-  animationObjects: { [index: string]: Animation | undefined },
   targets: string[],
   animation: PropertyIndexedKeyframes
 ) => {
@@ -114,7 +128,7 @@ const useSetUpTargets = (
     // ensure that no object has _initial as a value
     Object.keys(animationStyleValues).forEach((elementId) => {
       const selectedHtmlElement = targetElementsObj[elementId];
-      const selectedAnimationStyles = animationStyleValues[elementId]
+      const selectedAnimationStyles = animationStyleValues[elementId];
 
       Object.keys(selectedAnimationStyles).forEach((styleName) => {
         if (!animationKeysToIgnore.includes(styleName) && selectedHtmlElement) {
@@ -122,19 +136,24 @@ const useSetUpTargets = (
           // not sure how to fix as the style only takes number index
           //@ts-ignore
           const style = selectedHtmlElement.style[styleName];
-          if(selectedAnimationStyles.includes('_inherit')){
-          }
-
-          }
+          //@ts-ignore
+          const updatedStyles = selectedAnimationStyles[styleName].map((val) =>
+            val.replace("_initial", style || "inherit")
+          );
+          animationStyleValues[elementId][styleName] = updatedStyles;
         }
       });
     });
+
+    // Dispatch to save to state
+    dispatch(setAnimationStyles(animationStyleValues));
+    dispatch(setTargetElements(targetElementsObj));
   }, []);
 };
 
 export const useAnimationMain = (data: IUseAnimationProps) => {
   const [state, dispatch] = useReducer(animationsReducer, initialAnimationState);
-  const { targetElements, animationObjects } = state;
+  const { targetElements, animationObjects, animationStyles } = state;
   const {
     targets,
     animation,
@@ -148,7 +167,7 @@ export const useAnimationMain = (data: IUseAnimationProps) => {
     continuous,
   } = data;
 
-  useSetUpTargets(dispatch, animationObjects, targets, animation);
+  useSetUpTargets(dispatch, targets, animation);
 
   //   useEffect(() => {
   //     //1. Gets keyframe styles and makes sure that they are defined, will set if not sufficently defined (incase the _initial option is used)
@@ -156,9 +175,13 @@ export const useAnimationMain = (data: IUseAnimationProps) => {
   //     //3. Gets and sets the Objects being animated (using a query selector)
   //   }, []);
 
-  //   useEffect(() => {
-  //     // Sets the animation, using the the keyframes, target elements and options passed in (which have been updated via the first use effect)
-  //   }, [targetElements]);
+  useEffect(() => {
+    if (Object.keys(targetElements).length !== 0) {
+      console.log("targets", targetElements);
+      console.log("animationStyles", animationStyles);
+    }
+    // Sets the animation, using the the keyframes, target elements and options passed in (which have been updated via the first use effect)
+  }, [targetElements]);
 
   //   useEffect(() => {
   //     //sets the event listeners for the animation dependent on which trigger is being used to trigger the element
