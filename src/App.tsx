@@ -21,6 +21,18 @@ const App = () => {
     trigger: { target: ".other", action: "click" },
   });
 
+  useAnimationMain({
+    targets: ["li"],
+    animation: { width: ["_initial", "50%", "100%", "50%"], color: ["_initial", "green", "yellow", "red"] },
+    commitStyles: true,
+    // alternate: true,
+    // spacingDelay: 200,
+    easing: "ease",
+    time: 1000,
+    // continuous: true,
+    trigger: { action: "click" },
+  });
+
   // const [playOtherAnimation, animationIsPlaying] = useAnimation({
   //   targets: ["li"],
   //   animation: { width: ["_initial", "50%", "100%", "50%"], color: ["_initial", "green", "yellow", "red"] },
