@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { useAnimation } from "./animations/animation";
-import { useAnimationMain } from "./animations/animationV2";
+// import { useAnimation } from "./animations/animation";
+import { useAnimation } from "./animations/animationV2";
 
 const callback = () => {
   console.log("external callback");
@@ -9,24 +9,36 @@ const callback = () => {
 const App = () => {
   const [apiData, setApiDataState] = useState(false);
 
-  useAnimationMain({
-    targets: ["li"],
-    animation: { width: ["_initial", "50%", "100%", "50%"], color: ["_initial", "green", "yellow", "red"] },
-    commitStyles: true,
-    alternate: true,
-    spacingDelay: 200,
-    easing: "ease",
-    time: 1000,
-    continuous: true,
-    trigger: { target: ".other", action: "click" },
-  });
+  // useAnimationMain({
+  //   targets: ["li"],
+  //   animation: { width: ["_initial", "50%", "100%", "50%"], color: ["_initial", "green", "yellow", "red"] },
+  //   commitStyles: true,
+  //   alternate: true,
+  //   spacingDelay: 200,
+  //   easing: "ease",
+  //   time: 1000,
+  //   continuous: true,
+  //   trigger: { target: ".other", action: "click" },
+  // });
 
-  useAnimationMain({
+  // useAnimationMain({
+  //   targets: ["li"],
+  //   animation: { width: ["_initial", "50%", "100%", "50%"], color: ["_initial", "green", "yellow", "red"] },
+  //   commitStyles: true,
+  //   // alternate: true,
+  //   // spacingDelay: 200,
+  //   easing: "ease",
+  //   time: 1000,
+  //   continuous: true,
+  //   trigger: { target: apiData },
+  // });
+
+  useAnimation({
     targets: ["li"],
     animation: { width: ["_initial", "50%", "100%", "50%"], color: ["_initial", "green", "yellow", "red"] },
-    commitStyles: true,
+    // commitStyles: true,
     // alternate: true,
-    // spacingDelay: 200,
+    spacingDelay: 200,
     easing: "ease",
     time: 1000,
     // continuous: true,
@@ -59,13 +71,25 @@ const App = () => {
 
   // useAnimation({
   //   targets: ["#sidebar"],
-  //   animation: { backgroundColor: ["red", "green"], easing: ["ease-out"] },
+  //   animation: { flex: ["_initial", "0.2"], easing: ["ease-out"] },
   //   alternate: true,
-  //   spacingDelay: 200,
-  //   time: 5000,
+  //   // spacingDelay: 200,
+  //   time: 1000,
   //   easing: "ease-out",
-  //   trigger: { action: "click" },
+  //   trigger: { target: ".other", action: "click" },
   // });
+
+  // useEffect(() => {
+  //   setTimeout(() => {
+  //     setApiDataState(true);
+  //     console.log("animation on");
+  //   }, 2000);
+
+  //   setTimeout(() => {
+  //     setApiDataState(false);
+  //     console.log("animation off");
+  //   }, 5000);
+  // }, []);
 
   return (
     <div style={{ display: "flex" }}>
@@ -116,7 +140,7 @@ const App = () => {
           Click Me
         </button>
         <button
-          className="other"
+          className="other1"
           onClick={() => {
             //@ts-ignore
             // playAnimation.stop();

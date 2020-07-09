@@ -19,13 +19,32 @@
     "shortid": "^2.2.15",
     "styled-components": "^5.1.1",
     "typescript": "^3.9.5",
+    "web-animations-js": "^2.3.2",
     "yarn": "^1.22.4"
   },
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
-    "test": "react-scripts test",
+    "test": "set CI=true && react-scripts test",
+    "test:coverage": "set CI=true && react-scripts test --coverage",
     "eject": "react-scripts eject"
+  },
+  "jest": {
+    "collectCoverageFrom": [
+      "**/animations/**.{js,jsx,ts,tsx}",
+      "!**/coverage/**",
+      "!**/node_modules/**",
+      "!**/types.ts"
+    ],
+    "transform": {
+      "^.+\\.(ts|js)x?$": "ts-jest"
+    },
+    "transformIgnorePatterns": [
+      "<rootDir>/node_modules/(?!(quill-mention)/)"
+    ],
+    "setupFiles": [
+      "jest-canvas-mock"
+    ]
   },
   "eslintConfig": {
     "extends": "react-app"
@@ -46,6 +65,8 @@
     "enzyme": "^3.11.0",
     "enzyme-adapter-react-16": "^1.15.2",
     "enzyme-to-json": "^3.5.0",
-    "react-test-renderer": "^16.13.1"
+    "jest-canvas-mock": "^2.2.0",
+    "react-test-renderer": "^16.13.1",
+    "ts-jest": "^26.1.1"
   }
 }

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import Easings, { EasingTypes } from "./easing";
+import Easings, { EasingTypes } from "./animations/easing";
 import shortid from "shortid";
 
 // interface CustomKeyframe extends Omit<Keyframe, "easing"> {
@@ -121,7 +121,6 @@ export const useAnimation = (data: IUseAnimationProps) => {
         // not sure if this works!?
 
         if (element && animationStyles) {
-          console.log("back here again");
           const timeLine = document.timeline;
           const keyFrames = new KeyframeEffect(element, animationStyles[key], {
             duration: time,
